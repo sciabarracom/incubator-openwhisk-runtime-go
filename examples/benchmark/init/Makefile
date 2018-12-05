@@ -2,26 +2,28 @@ IMG?=openwhisk/actionloop-golang-v1.11:410d006
 EXT=go
 NAME=under-test-
 START=10000
-END=10100
+N?=100
+END=$(shell expr $(START) + $(N))
 
 report.txt: main.test main-src.test main-bin.test exec.test
 	tail -n +1 *.test | tee report.txt
 
-%.test: %.json
+%.test: %.json multipost
 	make start
-	seq  -f "http://localhost:%g/init" $(START) $(END) |\
-	time xargs curl -q -XPOST -H "Content-Type: application/json" \
-	-d @$< 2>$@
+	seq  $(START) $(END) | time xargs ./multipost -init $< -run run.dat 2>$@
 	make stop
 
 clean:
-	-rm *.json *.zip *.b64 *.test exec report.txt
+	-rm *.json *.zip *.b64 *.test exec report.txt multipost
 
 main-src.zip: main.$(EXT)
 	zip main-src.zip main.$(EXT)
 
 main-bin.zip: main-src.zip
 	docker run -i $(IMG) -compile main <main-src.zip >main-bin.zip
+
+multipost: multipost.go
+	go build -o multipost multipost.go
 
 exec: main-bin.zip
 	unzip -o main-bin.zip
@@ -48,3 +50,4 @@ stop:
 	done
 
 .PHONY: start stop all
+
