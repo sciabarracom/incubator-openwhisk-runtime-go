@@ -70,6 +70,44 @@ func extractAndCompile(ap *openwhisk.ActionProxy) {
 	fatalIf(err)
 }
 
+// auto init
+func autoInit(ap *openwhisk.ActionProxy, initFile string, main string) {
+	if initFile == "" {
+		return
+	}
+	_, err := os.Stat(initFile)
+	if os.IsNotExist(err) {
+		openwhisk.Debug("not found %s: %s", initFile, err)
+		return
+	}
+	buf, err := ioutil.ReadFile(initFile)
+	if err != nil {
+		openwhisk.Debug("cannot read: %s", err)
+		return
+	}
+
+	// default main to "main"
+	if main == "" {
+		main = "main"
+	}
+
+	// if a compiler is defined try to compile
+	_, err = ap.ExtractAndCompile(&buf, main)
+	if err != nil {
+		openwhisk.Debug("compile error: %s", err)
+		return
+	}
+
+	// start an action
+	err = ap.StartLatestAction()
+	if err != nil {
+		openwhisk.Debug("%s", err)
+		return
+	}
+	openwhisk.Debug("action autoinitialized")
+	ap.Initialized = true
+}
+
 func main() {
 	flag.Parse()
 
@@ -94,6 +132,9 @@ func main() {
 		extractAndCompile(ap)
 		return
 	}
+
+	// auto initialization if available
+	autoInit(ap, os.Getenv("OW_AUTOINIT"), os.Getenv("OW_AUTOINIT_MAIN"))
 
 	// start the balls rolling
 	openwhisk.Debug("OpenWhisk ActionLoop Proxy %s: starting", openwhisk.Version)

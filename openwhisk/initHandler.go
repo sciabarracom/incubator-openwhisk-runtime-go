@@ -51,7 +51,7 @@ func sendOK(w http.ResponseWriter) {
 
 func (ap *ActionProxy) initHandler(w http.ResponseWriter, r *http.Request) {
 
-	if ap.initialized {
+	if ap.Initialized {
 		msg := "Cannot initialize the action more than once."
 		sendError(w, http.StatusForbidden, msg)
 		log.Println(msg)
@@ -121,12 +121,13 @@ func (ap *ActionProxy) initHandler(w http.ResponseWriter, r *http.Request) {
 		sendError(w, http.StatusBadRequest, "cannot start action: "+err.Error())
 		return
 	}
-	ap.initialized = true
+	ap.Initialized = true
 	sendOK(w)
 }
 
 // ExtractAndCompile decode the buffer and if a compiler is defined, compile it also
 func (ap *ActionProxy) ExtractAndCompile(buf *[]byte, main string) (string, error) {
+
 	// extract in "bin" or in "src" if the runtime can compile
 	suffix := "bin"
 	if ap.compiler != "" {
@@ -168,6 +169,7 @@ func (ap *ActionProxy) ExtractAndCompile(buf *[]byte, main string) (string, erro
 	if err != nil {
 		return "", err
 	}
+
 	// check only if the file exist
 	if _, err := os.Stat(binFile); os.IsNotExist(err) {
 		return "", fmt.Errorf("cannot compile")

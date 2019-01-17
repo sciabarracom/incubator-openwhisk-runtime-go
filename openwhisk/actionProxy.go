@@ -28,7 +28,7 @@ import (
 type ActionProxy struct {
 
 	// is it initialized?
-	initialized bool
+	Initialized bool
 
 	// current directory
 	baseDir string
@@ -104,20 +104,23 @@ func (ap *ActionProxy) StartLatestAction() error {
 	return err
 }
 
+var wsPath = os.Getenv("OW_WEBSOCKET")
+
 func (ap *ActionProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	switch r.URL.Path {
-	case "/init":
+	path := r.URL.Path
+	if path == "/init" {
 		ap.initHandler(w, r)
-	case "/run":
+	} else if path == "/run" {
 		ap.runHandler(w, r)
+	} else if wsPath != "" && path == wsPath {
+		ap.wsHandler(w, r)
+	} else {
+		Debug("unknown path requested")
 	}
 }
 
 // Start creates a proxy to execute actions
 func (ap *ActionProxy) Start(port int) {
-
 	// listen and start
-	//http.HandleFunc("/init", func(w http.ResponseWriter, r *http.Request) { ap.initHandler(w, r) })
-	//http.HandleFunc("/run", func(w http.ResponseWriter, r *http.Request) { ap.runHandler(w, r) })
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), ap))
 }

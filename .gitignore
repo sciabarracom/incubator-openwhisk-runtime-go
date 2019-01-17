@@ -26,6 +26,7 @@ openwhisk/_test/output/
 openwhisk/action/
 openwhisk/compile/
 openwhisk/debug.test
+main/action
 
 # Eclipse
 tests/bin/
