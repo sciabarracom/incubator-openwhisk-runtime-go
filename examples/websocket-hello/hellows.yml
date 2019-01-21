@@ -1,0 +1,79 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: hellows
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hellows
+  namespace: hellows
+data:
+  main.go: |
+    package main
+    import "fmt"
+    func Main(obj map[string]interface{}) map[string]interface{} {
+      name, ok := obj["name"].(string)
+      if !ok { 
+        name = "world" 
+      }
+      fmt.Printf("name=%s\n", name)
+      msg := make(map[string]interface{})
+      msg["golang-main-single"] = "Hello, " + name + "!"
+      return msg 
+    }
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hellows
+  namespace: hellows
+  labels:
+    app: hellows
+spec:
+  volumes:
+  - name: mnt
+    configMap:
+      name: hellows
+  containers:
+  - name: hellows
+    image: actionloop/golang-v1.11:ws3
+    ports:
+    - containerPort: 8080
+      protocol: TCP
+    volumeMounts:
+    - name: mnt
+      mountPath: "/mnt"    
+    env:
+    - name: OW_WEBSOCKET
+      value: /hello
+    - name: OW_AUTOINIT
+      value: /mnt/main.go
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hellows
+  namespace: hellows
+spec:
+  ports:
+  - port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: hellows
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: hellows
+  namespace: hellows
+spec:
+  rules:
+  - host: hellows.sciabarra.net
+    http:
+      paths:
+      - path: /hello
+        backend:
+          serviceName: hellows
+          servicePort: 8080
