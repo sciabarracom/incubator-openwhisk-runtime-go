@@ -62,6 +62,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: nginx-svc
+  namespace: hellows
 spec:
   ports:
   - port: 80
@@ -74,6 +75,7 @@ apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: nginx-ingress
+  namespace: hellows
 spec:
   rules:
   - host: hellows.sciabarra.net
