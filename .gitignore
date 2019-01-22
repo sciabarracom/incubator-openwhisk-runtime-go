@@ -17,6 +17,7 @@ golang1.10/proxy
 # Go test transient files
 openwhisk/_test/exec
 openwhisk/_test/exec.go
+openwhisk/_test/empty
 openwhisk/_test/hi
 openwhisk/_test/hello_greeting
 openwhisk/_test/hello_message

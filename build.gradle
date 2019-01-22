@@ -25,7 +25,7 @@ buildscript {
 }
 
 plugins {
-    id 'com.github.blindpirate.gogradle' version '0.10.2'
+    id 'com.github.blindpirate.gogradle' version '0.11.1'
 }
 
 dependencies {
@@ -36,7 +36,6 @@ dependencies {
     }
 }
 
-
 subprojects {
     apply plugin: 'scalafmt'
     scalafmt.configFilePath = gradle.scalafmt.config
@@ -44,13 +43,13 @@ subprojects {
 
 golang {
   packagePath = 'github.com/apache/incubator-openwhisk-runtime-go'
-  goVersion = '1.11.3'
+  goVersion = '1.11.4'
 }
 
+goBuild.dependsOn goVendor
 
-build.dependsOn vendor
-
-build {
+goBuild {
   targetPlatform = ['linux-amd64']
-  go 'build -o actionProxyLoop/proxy main/proxy.go'
+  go """build -o actionProxyLoop/proxy -ldflags '-extldflags "-static"'  main/proxy.go"""
 }
+

@@ -18,39 +18,39 @@
 
 cd "$(dirname $0)"
 
+export GOPATH=$PWD
+
 function build {
-   test -e exec && rm exec
    cp $1.src $1.go
-   GOPATH=$PWD go build -a -o exec $1.go
+   go build -a -o $1 $1.go
    rm $1.go
 }
 
 function build_main {
-   test -e exec && rm exec
    cp ../../common/gobuild.py.launcher.go $1.go
    cat $1.src >>$1.go
-   go build -a -o exec $1.go
+   go build -a -o $1 $1.go
    rm $1.go
 }
 
-
 build hi
+cp -f hi exec 
 zip hi.zip exec
-cp exec hi
 
 build_main hello_message
+cp -f hello_message exec 
 zip hello_message.zip exec
-cp exec hello_message
 
 build_main hello_greeting
+cp -f hello_greeting exec
 zip hello_greeting.zip exec
-cp exec hello_greeting
 
 test -e hello.zip && rm hello.zip
 cd src
 zip -q -r ../hello.zip main.go hello
 cd ..
 
-build exec
+build empty
+cp -f empty exec
 test -e exec.zip && rm exec.zip
 zip -q -r exec.zip exec etc dir

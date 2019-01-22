@@ -1,3 +1,6 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more contributor
+# license agreements; and to You under the Apache License, Version 2.0.
+
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -14,13 +17,13 @@ data:
     import "fmt"
     func Main(obj map[string]interface{}) map[string]interface{} {
       name, ok := obj["name"].(string)
-      if !ok { 
-        name = "world" 
+      if !ok {
+        name = "world"
       }
       fmt.Printf("name=%s\n", name)
       msg := make(map[string]interface{})
       msg["golang-main-single"] = "Hello, " + name + "!"
-      return msg 
+      return msg
     }
 ---
 apiVersion: v1
@@ -43,7 +46,7 @@ spec:
       protocol: TCP
     volumeMounts:
     - name: mnt
-      mountPath: "/mnt"    
+      mountPath: "/mnt"
     env:
     - name: OW_WEBSOCKET
       value: /hello
