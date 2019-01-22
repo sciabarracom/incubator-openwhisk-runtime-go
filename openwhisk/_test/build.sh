@@ -34,11 +34,11 @@ function build_main {
 }
 
 build hi
-cp -f hi exec 
+cp -f hi exec
 zip hi.zip exec
 
 build_main hello_message
-cp -f hello_message exec 
+cp -f hello_message exec
 zip hello_message.zip exec
 
 build_main hello_greeting
