@@ -40,7 +40,7 @@ spec:
       name: hellows
   containers:
   - name: hellows
-    image: actionloop/golang-v1.11:ws3
+    image: actionloop/golang-v1.11:ws4
     ports:
     - containerPort: 8080
       protocol: TCP
