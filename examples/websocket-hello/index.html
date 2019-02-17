@@ -1,0 +1,26 @@
+<!DOCTYPE HTML>
+<html>
+    <body>
+        Input: <input id="input" type="text" size="10"><br>
+        <button id="send" disabled>Send</button><br>
+        Output:<b><span id="output"></span></b><br>
+    <script>
+        var tgt = "wss://hellows.sciabarra.net/hello";
+        var socket = new WebSocket(tgt);
+        socket.onopen = function(event) {
+            console.log("Connected!")
+            document.getElementById("send").disabled = false
+        }
+        document.getElementById("send").onclick = function() {
+            data = { "name": document.getElementById("input").value}
+            console.log(data)
+            socket.send(JSON.stringify(data)+"\n")
+        }
+        socket.onmessage = function(message) {
+            var data = JSON.parse(message.data)
+            console.log(data)
+            document.getElementById("output").innerText = data["golang-main-single"]
+        }
+    </script>
+    </body>
+</html>
