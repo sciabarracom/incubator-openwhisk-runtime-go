@@ -1,0 +1,19 @@
+#!/bin/bash
+case "$1" in
+    "-build") # -build main input output
+        shift
+        mkdir /exec
+        /bin/proxy -compile "$1"  <"$2" >/exec/exec.zip
+        /bin/ftl.par \
+        --base "$3" \
+        --name "$4" \
+        --directory /exec \
+        --destination /exec
+    ;;
+    "*")
+        if test -e /exec/exec.zip
+        then exec env OW_AUTOINIT=/exec/exec.zip /bin/proxy
+        else exec /bin/proxy "$@"
+        fi
+    ;;
+esac

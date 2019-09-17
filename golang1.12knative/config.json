@@ -1,0 +1,7 @@
+{
+  "auths": {
+    "registry.kube-system": {
+      "auth": "cmVnaXN0cnk6cGFzc3dvcmQ="
+    }
+  }
+}
