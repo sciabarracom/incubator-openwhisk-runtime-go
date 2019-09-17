@@ -5,6 +5,14 @@ build-image: proxy
 	docker tag actionloop/golang-v1.12:knative-whisk registry.kube-system/actionloop/golang-v1.12:knative-whisk
 	docker push registry.kube-system/actionloop/golang-v1.12:knative-whisk
 
+.PHONY: push
+push: build-image
+	docker tag actionloop/golang-v1.12:knative-whisk docker.io/actionloop/golang-v1.12:knative-whisk
+	docker login
+	docker push docker.io/actionloop/golang-v1.12:knative-whisk
+
+
+
 .PHONY: test-compile
 test-compile:
 	docker run -i actionloop/golang-v1.12:knative-whisk \

@@ -10,7 +10,7 @@ case "$1" in
         --directory /exec \
         --destination /exec
     ;;
-    "*")
+    *)
         if test -e /exec/exec.zip
         then exec env OW_AUTOINIT=/exec/exec.zip /bin/proxy
         else exec /bin/proxy "$@"
