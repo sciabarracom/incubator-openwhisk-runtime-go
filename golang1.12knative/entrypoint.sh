@@ -4,7 +4,7 @@ case "$1" in
         shift
         mkdir /exec
         /bin/proxy -compile "$1"  <"$2" >/exec/exec.zip
-        /bin/ftl.par \
+        env HOME=/root /bin/ftl.par \
         --base "$3" \
         --name "$4" \
         --directory /exec \

@@ -11,8 +11,6 @@ push: build-image
 	docker login
 	docker push docker.io/actionloop/golang-v1.12:knative-whisk
 
-
-
 .PHONY: test-compile
 test-compile:
 	docker run -i actionloop/golang-v1.12:knative-whisk \
