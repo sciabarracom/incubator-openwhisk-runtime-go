@@ -3,6 +3,12 @@ case "$1" in
     "-build") # -build main input output
         shift
         mkdir /exec
+        if test "$1" == "-git"
+        then mkdir -p /workspace/source
+             git clone "$2" /workspace/source
+             shift
+             shift
+        fi
         /bin/proxy -compile "$1"  <"$2" >/exec/exec.zip
         env HOME=/root /bin/ftl.par \
         --base "$3" \
