@@ -1,0 +1,10 @@
+@startuml
+Theia -> Invoker: init with debuger
+Invoker -> Action: create with debugger :8081
+Theia -> Invoker: run (theia=IP)
+Invoker -> Action: run (theia=IP)
+Action -> Theia: connect to IP:7737
+Theia -> Theia: setup a tunnel from 127.0.0.1:8081 
+Debug -> Theia: connect to 127.0.0.1:8081
+Theia -> Action: run under debugger 
+@enduml

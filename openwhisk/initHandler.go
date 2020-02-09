@@ -142,6 +142,7 @@ func (ap *ActionProxy) initHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ap.initialized = true
+	StartForwarderIfDebugging()
 	sendOK(w)
 }
 
