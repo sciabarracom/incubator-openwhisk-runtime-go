@@ -1,0 +1,14 @@
+@startuml start
+
+HTTP - [Proxy]
+[Proxy] ..> [Action] : fork
+
+Debug - [Action]
+
+note left of Debug
+ TCP port 8081
+ specified with 
+ __OW_DEBUG_PORT
+end note
+
+@enduml

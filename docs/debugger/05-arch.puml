@@ -1,0 +1,41 @@
+@startuml
+
+skinparam folder {
+    borderColor #ffffff
+    fontColor #ffffff
+    shadowing false
+}
+
+package "OpenWhisk" {
+    rectangle Edge {
+        [Nginx]
+        [Traefik]
+        [Nginx] --> [Traefik]
+    }
+    rectangle "Action Container" {
+        folder inner {
+          Forward -left- [Proxy]
+        }
+    }
+    [Traefik] --> Forward
+    [Proxy] ..> [Traefik] 
+}
+
+note right of [Nginx]
+ Reverse proxy 
+ /debug/*
+end note
+
+note top of [Traefik]
+ Reverse proxy 
+ /debug/<id>
+end note
+
+note top of [Proxy]
+ Request 
+ reverse proxy
+ /debug/<id>
+end note
+
+
+@enduml

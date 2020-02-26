@@ -1,0 +1,21 @@
+@startuml start
+
+skinparam folder {
+    borderColor #ffffff
+    fontColor #ffffff
+    shadowing false
+}
+
+HTTP -left- [Proxy]
+Forward -right- [Proxy]
+[Proxy] ..> [Action] : fork
+[Proxy] ..> Debug : "forward\nTCP"
+
+Debug - [Action]
+
+note left of Forward
+ HTTP port 8079
+end note
+
+
+@enduml

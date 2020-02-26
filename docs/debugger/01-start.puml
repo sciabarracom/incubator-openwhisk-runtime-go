@@ -1,0 +1,11 @@
+@startuml start
+
+HTTP - [Proxy]
+[Proxy] ..> [Action] : fork
+
+note left of HTTP
+ HTTP
+ port 8080
+end note
+
+@enduml

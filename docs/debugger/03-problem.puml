@@ -1,0 +1,28 @@
+@startuml start
+
+skinparam folder {
+    borderColor #ffffff
+    fontColor #ffffff
+    shadowing false
+}
+
+package "OpenWhisk" {
+ rectangle "Action Container" {
+  folder inner {
+    () HTTP
+    () "Debug\n\n----" as Debug
+    HTTP - [Proxy]
+    Debug - [Action]
+  }
+ }
+}
+:user: --> Debug
+:user: -[hidden]- HTTP
+
+note left of :user:
+  How to reach 
+  the TCP 
+  Debug Port ? 
+end note
+
+@enduml

@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -60,6 +61,32 @@ func stopTestServer(ts *httptest.Server, cur string, buf *os.File) {
 	os.Chdir(cur)
 	ts.Close()
 	dump(buf)
+}
+
+var testHTTPServerLastRequest string
+var testHTTPServerLastBody string
+
+func testHTTPServer(resp string) *httptest.Server {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := ioutil.ReadAll(r.Body)
+		testHTTPServerLastRequest = r.Method + " " + r.URL.String()
+		testHTTPServerLastBody = string(body)
+		fmt.Fprintln(w, resp)
+	}))
+	return ts
+}
+
+func doGet(url string) (string, int, error) {
+	res, err := http.Get(url)
+	if err != nil {
+		return "", -1, err
+	}
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return "", -1, err
+	}
+	return string(body), res.StatusCode, nil
 }
 
 func doPost(url string, message string) (string, int, error) {
@@ -125,6 +152,37 @@ func initBinary(file string, main string) string {
 	return initBytes(dat, main)
 }
 
+func TCPClient(hostPort string, message string, res chan string) {
+	tcpAddr, err := net.ResolveTCPAddr("tcp", hostPort)
+	if err != nil {
+		res <- err.Error()
+		return
+	}
+
+	conn, err := net.DialTCP("tcp", nil, tcpAddr)
+	if err != nil {
+		res <- err.Error()
+		return
+	}
+	defer conn.Close()
+
+	if message != "" {
+		_, err = conn.Write([]byte(message))
+		if err != nil {
+			res <- err.Error()
+			return
+		}
+	}
+
+	reply := make([]byte, 1024)
+	_, err = conn.Read(reply)
+	if err != nil {
+		res <- err.Error()
+		return
+	}
+	res <- string(reply)
+}
+
 func abs(in string) string {
 	out, _ := filepath.Abs(in)
 	return out
@@ -169,8 +227,18 @@ func removeLineNr(out string) string {
 	var re = regexp.MustCompile(`:\d+:\d+`)
 	return re.ReplaceAllString(out, "::")
 }
+
+func grep(search string, data string) {
+	re := regexp.MustCompile(search)
+	lines := strings.Split(data, "\n")
+	for _, line := range lines {
+		if re.Match([]byte(line)) {
+			fmt.Println(strings.TrimSpace(line))
+		}
+	}
+}
 func TestMain(m *testing.M) {
-	Debugging = false // enable debug of tests
+	Debugging = true // enable debug of tests
 	if !Debugging {
 		// silence those annoying tests
 		log.SetOutput(ioutil.Discard)
