@@ -82,7 +82,7 @@ func Example_hello() {
 }
 
 // compile a function including a package
-func Example_package() {
+func _Example_package() {
 	N := "2"
 	sys(PREP, "hello2.src", N, "exec", "hello")
 	ap := NewActionProxy(TMP, COMP, os.Stdout, os.Stderr)

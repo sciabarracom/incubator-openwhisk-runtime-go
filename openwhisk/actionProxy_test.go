@@ -160,7 +160,17 @@ func Example_SetEnv() {
 	// Output:
 	// map[]
 	// [1,2,3] {"a":1,"b":2} string 123
+}
 
+func _ExampleProxy() {
+	ts, cur, log := startTestServer("")
+	res, _, _ := doPost(ts.URL+"/init", "{}")
+	fmt.Print(res)
+	res, _, _ = doPost(ts.URL+"/run", "{}")
+	fmt.Print(res)
+	stopTestServer(ts, cur, log)
+	// Output:
+	// -
 }
 
 func Example_executionEnv_nocheck() {

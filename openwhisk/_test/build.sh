@@ -18,6 +18,12 @@
 
 cd "$(dirname $0)"
 
+# trick to avoid rebuilding all the time with vscode when running tests
+if [[ -n "$VSCODE_PID" ]] && [[ -e "/tmp/openwisk-runtime-go.$VSCODE_PID" ]]
+then exit 0
+else touch /tmp/openwisk-runtime-go.$VSCODE_PID
+fi
+
 function build {
    test -e exec && rm exec
    cp $1.src $1.go
@@ -33,7 +39,18 @@ function build_main {
    rm $1.go
 }
 
+# build zip
+rm action.zip 2>/dev/null
+zip -r -q action.zip action
 
+
+# test tcp
+build usvr
+mv exec usvr
+build tcli
+mv exec tcli
+
+# test actions
 build hi
 zip -q hi.zip exec
 cp exec hi
@@ -57,6 +74,7 @@ cd jar ; zip -q -r ../sample.jar * ; cd ..
 build exec
 test -e exec.zip && rm exec.zip
 zip -q -r exec.zip exec etc dir
+
 echo exec/env >helloack/exec.env
 zip -j helloack.zip helloack/*
 

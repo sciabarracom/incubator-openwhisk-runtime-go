@@ -1,4 +1,3 @@
-#!/bin/bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -15,6 +14,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-cd "$(dirname $0)"
-rm action.zip 2>/dev/null
-zip -r -q action.zip action
+FROM golang:1.13.8
+RUN echo "deb http://deb.debian.org/debian stretch-backports main contrib non-free" \
+     >>/etc/apt/sources.list &&\
+    apt-get update && apt-get install -y \
+     curl \
+     jq \
+     git \
+     vim &&\
+    apt-get -y install \
+     librdkafka1=0.11.6-1~bpo9+1 \
+     librdkafka++1=0.11.6-1~bpo9+1 && \
+    apt-get -y install \
+     librdkafka-dev=0.11.6-1~bpo9+1 && \
+    rm -rf /var/lib/apt/lists/* && \
+    go get -u github.com/go-delve/delve/cmd/dlv && \
+    go get -v github.com/jpillora/chisel
+RUN mkdir /action
+WORKDIR /action
+ADD proxy /bin/proxy
+ADD bin/compile /bin/compile
+ADD lib/launcher.go /lib/launcher.go
+ENV OW_COMPILER=/bin/compile
+ENTRYPOINT [ "/bin/proxy" ]

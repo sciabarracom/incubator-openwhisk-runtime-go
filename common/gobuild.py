@@ -53,15 +53,22 @@ def sources(launcher, source_dir, main):
 
 def build(parent, source_dir, target):
     # compile...
+    goroot = "/usr/local/go"
+    if "GOROOT" in os.environ:
+        goroot = os.environ["GOROOT"]
     env = {
       "PATH": os.environ["PATH"],
+      "GOROOT": goroot,
       "GOPATH": os.path.abspath(parent),
-      "GOCACHE": "/tmp"
+      "GOCACHE": "/tmp",
+      "GO111MODULE": "off"
     }
+    #print(env)
     if os.path.isdir("%s/main" % source_dir):
         source_dir += "/main"
-    p = subprocess.Popen(
-        ["go", "build", "-i", "-ldflags=-s -w",  "-o", target],
+    gobuild =  ["go", "build", "-i", "-ldflags=-s -w",  "-o", target]
+    #print("cd %s ; %s" % (source_dir, " ".join(gobuild)))
+    p = subprocess.Popen(gobuild,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         cwd=source_dir,

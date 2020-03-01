@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package openwhisk
 
 import (
@@ -24,7 +23,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -49,8 +47,8 @@ func startTestServer(compiler string) (*httptest.Server, string, *os.File) {
 	buf, _ := ioutil.TempFile("", "log")
 	ap := NewActionProxy(dir, compiler, buf, buf)
 	ts := httptest.NewServer(ap)
-	log.Printf(ts.URL)
-	doPost(ts.URL+"/init", `{value: {code: ""}}`)
+	//log.Printf(ts.URL)
+	//doPost(ts.URL+"/init", `{value: {code: ""}}`)
 	return ts, cur, buf
 }
 
@@ -152,37 +150,6 @@ func initBinary(file string, main string) string {
 	return initBytes(dat, main)
 }
 
-func TCPClient(hostPort string, message string, res chan string) {
-	tcpAddr, err := net.ResolveTCPAddr("tcp", hostPort)
-	if err != nil {
-		res <- err.Error()
-		return
-	}
-
-	conn, err := net.DialTCP("tcp", nil, tcpAddr)
-	if err != nil {
-		res <- err.Error()
-		return
-	}
-	defer conn.Close()
-
-	if message != "" {
-		_, err = conn.Write([]byte(message))
-		if err != nil {
-			res <- err.Error()
-			return
-		}
-	}
-
-	reply := make([]byte, 1024)
-	_, err = conn.Read(reply)
-	if err != nil {
-		res <- err.Error()
-		return
-	}
-	res <- string(reply)
-}
-
 func abs(in string) string {
 	out, _ := filepath.Abs(in)
 	return out
@@ -237,18 +204,17 @@ func grep(search string, data string) {
 		}
 	}
 }
-func TestMain(m *testing.M) {
-	Debugging = true // enable debug of tests
-	if !Debugging {
-		// silence those annoying tests
-		log.SetOutput(ioutil.Discard)
-		// build support files
-		sys("_test/build.sh")
-		sys("_test/zips.sh")
-	}
 
+func TestMain(m *testing.M) {
+	Debugging = os.Getenv("VSCODE_PID") != "" // enable debug of tests
+	sys("_test/build.sh")
+	if !Debugging {
+		// silence logging when not running under vscode for test
+		log.SetOutput(ioutil.Discard)
+	}
 	// increase timeouts for init
 	DefaultTimeoutStart = 1000 * time.Millisecond
+
 	// build some test stuff
 	// go ahead
 	code := m.Run()

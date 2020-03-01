@@ -26,6 +26,8 @@ openwhisk/_test/*.zip
 openwhisk/_test/*.jar
 openwhisk/_test/compile/
 openwhisk/_test/output/
+openwhisk/_test/usvr
+openwhisk/_test/tcli
 openwhisk/action/
 openwhisk/compile/
 openwhisk/debug.test

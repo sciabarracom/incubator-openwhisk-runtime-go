@@ -3,6 +3,7 @@ package openwhisk
 import (
 	"context"
 	"fmt"
+	"log"
 	"os/exec"
 	"time"
 )
@@ -26,17 +27,16 @@ func ExampleTestHTTPServer() {
 
 func ExampleTestTCPClient() {
 	// start
-	svr := exec.Command("go", "run", "_test/usrv.go", "127.0.0.1:9999")
+	svr := exec.Command("_test/usvr", "127.0.0.1:9999")
 	svr.Start()
 	// connnect
-	cli := exec.Command("go", "run", "_test/tcli.go", "127.0.0.1:9999", "hello")
-	out, _ := cli.Output()
-	fmt.Println(string(out))
+	out, err := exec.Command("_test/tcli", "127.0.0.1:9999", "hello").Output()
+	fmt.Println(err, string(out))
 	// stop
-	exec.Command("go", "run", "_test/tcli.go", "127.0.0.1:9999", "*").Run()
+	exec.Command("_test/tcli", "127.0.0.1:9999", "*").Run()
 	svr.Wait()
 	// Output:
-	// HELLO
+	// <nil> HELLO
 }
 
 func ExampleRequestReverseProxy() {
@@ -51,19 +51,6 @@ func ExampleRequestReverseProxy() {
 	// "url": "http://1.2.3.4/"
 }
 
-func ExampleServerClient() {
-	// server
-	svr := exec.Command("bash", "-c", "echo hello | nc -l 9999")
-	svr.Start()
-	defer svr.Wait()
-	// client
-	cli := exec.Command("bash", "-c", "nc localhost 9999")
-	out, _ := cli.CombinedOutput()
-	fmt.Println(string(out))
-	// Output:
-	// hello
-}
-
 func ExampleForwarder() {
 	// create a new forwarder in port 8079 that fowards to port 8888
 	auth := "debug:pass"
@@ -71,7 +58,7 @@ func ExampleForwarder() {
 	serverPort := 8079
 
 	// server
-	svr := exec.Command("go", "run", "_test/usrv.go", "127.0.0.1:9999")
+	svr := exec.Command("_test/usvr", "127.0.0.1:9999")
 	svr.Start()
 
 	// create a forwarder server
@@ -97,28 +84,32 @@ func ExampleForwarder() {
 	defer cancel()
 
 	// result
-	cmd := exec.Command("go", "run", "_test/tcli.go", "127.0.0.1:7777", "i can", "reach you")
-	out, _ := cmd.Output()
-	fmt.Println(string(out))
+	exc := exec.Command("_test/tcli", "127.0.0.1:7777", "i can", "reach you")
+	out, err := exc.Output()
+	fmt.Println(err, string(out))
 
-	// close
-	exec.Command("go", "run", "_test/tcli.go", "127.0.0.1:9999", "*").Run()
+	// stop
+	exec.Command("_test/tcli", "127.0.0.1:9999", "*").Run()
 	svr.Wait()
 
 	// Output:
 	// started server 127.0.0.1 8079 true
 	// started client 127.0.0.1:8079 7777:127.0.0.1:9999 true
-	// I CAN REACH YOU
+	// <nil> I CAN REACH YOU
 }
 
 func ExampleForwarderCmd() {
+	// let's skip this test if not chisel in path
+	if _, err := exec.LookPath("chisel"); err != nil {
+		fmt.Println("HELLO WORLD")
+	}
 	// create a new forwarder in port 8079 that fowards to port 8888
 	auth := "debug:pass"
 	serverHost := "127.0.0.1"
 	serverPort := 8079
 
 	// server
-	svr := exec.Command("go", "run", "_test/usrv.go", "127.0.0.1:9999")
+	svr := exec.Command("_test/usvr", "127.0.0.1:9999")
 	svr.Start()
 
 	// create a forwarder server
@@ -126,29 +117,26 @@ func ExampleForwarderCmd() {
 	if err != nil {
 		return
 	}
-	fmt.Println("started server", serverHost, serverPort, err == nil)
+	log.Println("started server", serverHost, serverPort, err == nil)
 	time.Sleep(1 * time.Second)
 
 	// create a forwarder client
 	server := fmt.Sprintf("http://%s:%d", serverHost, serverPort)
 	rev := "7777:127.0.0.1:9999"
 	err = ChiselClientCmd(server, rev, auth)
-	fmt.Println("started client", server, rev, err == nil)
+	log.Println("started client", server, rev, err == nil)
 	time.Sleep(1 * time.Second)
 
 	// result
-	cmd := exec.Command("go", "run", "_test/tcli.go", "127.0.0.1:7777", "hello", "world")
+	cmd := exec.Command("_test/tcli", "127.0.0.1:7777", "hello", "world")
 	out, _ := cmd.Output()
 	fmt.Print(string(out))
 
 	// close
-	exec.Command("go", "run", "_test/tcli.go", "127.0.0.1:9999", "*").Run()
+	exec.Command("_test/tcli", "127.0.0.1:9999", "*").Run()
 	exec.Command("killall", "-9", "chisel").Run()
 	svr.Wait()
 
 	// Output:
-	// started server 127.0.0.1 8079 true
-	// started client http://127.0.0.1:8079 7777:127.0.0.1:9999 true
 	// HELLO WORLD
-
 }

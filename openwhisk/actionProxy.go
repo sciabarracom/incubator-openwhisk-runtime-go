@@ -119,7 +119,7 @@ func (ap *ActionProxy) StartLatestAction() error {
 		return fmt.Errorf("no valid actions available")
 	}
 
-	// check version
+	// check execution environment
 	execEnv := os.Getenv("OW_EXECUTION_ENV")
 	if execEnv != "" {
 		execEnvFile := fmt.Sprintf("%s/%d/bin/exec.env", ap.baseDir, highestDir)
@@ -133,11 +133,16 @@ func (ap *ActionProxy) StartLatestAction() error {
 		}
 	}
 
-	// save the current executor
-	curExecutor := ap.theExecutor
+	// stop the current process if any before starting another one
+	// this can happen only while debugging
+	if ap.theExecutor != nil {
+		Debug("stopping old executor")
+		ap.theExecutor.Stop()
+	}
 
 	// try to launch the action
-	executable := fmt.Sprintf("%s/%d/bin/exec", ap.baseDir, highestDir)
+	projectDir := fmt.Sprintf("%s/%d/bin", ap.baseDir, highestDir)
+	executable := projectDir + "/exec"
 	os.Chmod(executable, 0755)
 	newExecutor := NewExecutor(ap.outFile, ap.errFile, executable, ap.env)
 	Debug("starting %s", executable)
@@ -146,13 +151,8 @@ func (ap *ActionProxy) StartLatestAction() error {
 	err := newExecutor.Start(os.Getenv("OW_WAIT_FOR_ACK") != "")
 	if err == nil {
 		ap.theExecutor = newExecutor
-		if curExecutor != nil {
-			Debug("stopping old executor")
-			curExecutor.Stop()
-		}
 		return nil
 	}
-
 	// cannot start, removing the action
 	// and leaving the current executor running
 	if !Debugging {
