@@ -28,17 +28,26 @@ import (
 	"strings"
 )
 
+// OwExecutionEnv is the execution environment set at compile time
+var OwExecutionEnv = ""
+
 func main() {
+	// check if the execution enviroment is correct
+	if OwExecutionEnv != "" && OwExecutionEnv != os.Getenv("__OW_EXECUTION_ENV") {
+		fmt.Println("Execution Environment Mismatch")
+		fmt.Println("Expected: ", OwExecutionEnv)
+		fmt.Println("Actual: ", os.Getenv("__OW_EXECUTION_ENV"))
+		os.Exit(1)
+	}
+
 	// debugging
 	var debug = os.Getenv("OW_DEBUG") != ""
 	if debug {
-		filename := os.Getenv("OW_DEBUG")
-		f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		f, err := os.OpenFile("/tmp/action.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		if err == nil {
 			log.SetOutput(f)
-			defer f.Close()
 		}
-		log.Printf("ACTION ENV: %v", os.Environ())
+		log.Printf("Environment: %v", os.Environ())
 	}
 
 	// assign the main function
@@ -51,10 +60,13 @@ func main() {
 	defer out.Close()
 	reader := bufio.NewReader(os.Stdin)
 
-	// read-eval-print loop
+	// acknowledgement of started action
+	fmt.Fprintf(out, `{ "ok": true}%s`, "\n")
 	if debug {
-		log.Println("started")
+		log.Println("action started")
 	}
+
+	// read-eval-print loop
 	for {
 		// read one line
 		inbuf, err := reader.ReadBytes('\n')
@@ -103,7 +115,7 @@ func main() {
 		}
 		output = bytes.Replace(output, []byte("\n"), []byte(""), -1)
 		if debug {
-			log.Printf("'<<<%s'<<<", output)
+			log.Printf("<<<'%s'<<<", output)
 		}
 		fmt.Fprintf(out, "%s\n", output)
 	}

@@ -54,7 +54,6 @@ func main() {
 	if *debug {
 		// set debugging flag, propagated to the actions
 		openwhisk.Debugging = true
-		os.Setenv("OW_DEBUG", "1")
 	}
 
 	// create the action proxy

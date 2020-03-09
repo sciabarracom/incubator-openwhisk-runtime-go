@@ -37,10 +37,11 @@ var DefaultTimeoutStart = 5 * time.Millisecond
 // Executor is the container and the guardian  of a child process
 // It starts a command, feeds input and output, read logs and control its termination
 type Executor struct {
-	cmd    *exec.Cmd
-	input  io.WriteCloser
-	output *bufio.Reader
-	exited chan bool
+	cmd       *exec.Cmd
+	input     io.WriteCloser
+	output    *bufio.Reader
+	rawOutput *os.File
+	exited    chan bool
 }
 
 // NewExecutor creates a child subprocess using the provided command line,
@@ -56,7 +57,7 @@ func NewExecutor(logout *os.File, logerr *os.File, command string, env map[strin
 	}
 	Debug("env: %v", cmd.Env)
 	if Debugging {
-		cmd.Env = append(cmd.Env, "OW_DEBUG=/tmp/action.log")
+		cmd.Env = append(cmd.Env, "OW_DEBUG=1")
 	}
 	input, err := cmd.StdinPipe()
 	if err != nil {
@@ -72,6 +73,7 @@ func NewExecutor(logout *os.File, logerr *os.File, command string, env map[strin
 		cmd,
 		input,
 		output,
+		pipeOut,
 		make(chan bool),
 	}
 }
@@ -84,6 +86,7 @@ func (proc *Executor) Interact(in []byte) ([]byte, error) {
 
 	chout := make(chan []byte)
 	go func() {
+		//Debug("Interact: reading...")
 		out, err := proc.output.ReadBytes('\n')
 		if err == nil {
 			chout <- out

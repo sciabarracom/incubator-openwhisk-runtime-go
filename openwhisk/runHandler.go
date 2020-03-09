@@ -52,7 +52,7 @@ func (ap *ActionProxy) runHandler(w http.ResponseWriter, r *http.Request) {
 		sendError(w, http.StatusBadRequest, fmt.Sprintf("Error reading request body: %v", err))
 		return
 	}
-	Debug("done reading %d bytes", len(body))
+	DebugLimit("read:", body, 100)
 
 	// check if you have an action
 	if ap.theExecutor == nil {

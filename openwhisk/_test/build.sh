@@ -31,18 +31,27 @@ function build {
    rm $1.go
 }
 
-function build_main {
+function build_main_with_net {
    test -e exec && rm exec
-   cp ../../common/gobuild.py.launcher.go $1.go
+   cat ../../common/gobuild.py.launcher.go \
+   | awk '/"bufio"/ {  print "\"net\"" }1' >$1.go
    cat $1.src >>$1.go
    go build -a -o exec $1.go
    rm $1.go
 }
 
+function build_main {
+   test -e exec && rm exec
+   cat ../../common/gobuild.py.launcher.go >$1.go
+   cat $1.src >>$1.go
+   go build -a -o exec $1.go
+   rm $1.go
+}
+
+
 # build zip
 rm action.zip 2>/dev/null
 zip -r -q action.zip action
-
 
 # test tcp
 build usvr
@@ -63,6 +72,10 @@ build_main hello_greeting
 zip -q hello_greeting.zip exec
 cp exec hello_greeting
 
+build_main_with_net hello_debugger
+zip -q hello_debugger.zip exec
+cp exec hello_debugger
+
 test -e hello.zip && rm hello.zip
 cd src
 zip -q -r ../hello.zip main.go hello
@@ -77,5 +90,3 @@ zip -q -r exec.zip exec etc dir
 
 echo exec/env >helloack/exec.env
 zip -j helloack.zip helloack/*
-
-

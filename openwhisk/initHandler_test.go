@@ -18,8 +18,11 @@
 package openwhisk
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"os"
+	"os/exec"
 	"path/filepath"
 )
 
@@ -264,4 +267,62 @@ func Example_parse_env() {
 	// map[]
 	// world
 	// world all
+}
+
+func Example_debugger() {
+
+	// proxy requests receiver
+	dts := testHTTPServer("test server")
+	os.Setenv("__OW_DEBUG_PROXY", dts.URL)
+
+	// test server
+	ts, cur, log := startTestServer("")
+
+	// intialized expecting the debugger
+	env := map[string]interface{}{
+		"__OW_DEBUG_PORT": "8081",
+		"__OW_DEBUG_AUTH": "123456",
+	}
+	doInit(ts, initBinaryEnv("_test/hello_debugger.zip", "main", env))
+
+	// check the debugger
+	out, err := exec.Command("_test/tcli", "127.0.0.1:8081",
+		"hello").Output()
+	fmt.Print(1, err, string(out))
+
+	// check the forwarder
+	server := "127.0.0.1:8079"
+	rev := "8079:127.0.0.1:8081"
+	cli, err := ChiselClient(server, rev, "123456")
+	cli.Logger.Info = false
+	cli.Logger.Debug = false
+	ctx, cancel := context.WithCancel(context.Background())
+	fmt.Println(2, "started client", server, rev, cli.Start(ctx) == nil)
+
+	// check the debugger
+	out, err = exec.Command("_test/tcli", "127.0.0.1:8081",
+		"forward me").Output()
+	fmt.Print(3, err, string(out))
+
+	// check the proxy server rules
+	fmt.Println(4, "checking rules and run")
+	grep(`rule|url`, replace("\\d+", "XXX", testHTTPServerLastBody))
+
+	// try a run and finish
+	doRun(ts, `{"name":"World"}`)
+	stopTestServer(ts, cur, log)
+	dts.Close()
+	cancel()
+	// Output:
+	// 200 {"debug":true}
+	// 1 <nil>HELLO
+	// 2 started client 127.0.0.1:8079 8079:127.0.0.1:8081 true
+	// 3 <nil>FORWARD ME
+	// 4 checking rules and run
+	// "rule": "PathPrefix:/XXX"
+	// "url": "http://XXX.XXX.XXX.XXX:XXX"
+	// 200 {"message":"Hello, World!"}
+	// name=World
+	// XXX_THE_END_OF_A_WHISK_ACTIVATION_XXX
+	// XXX_THE_END_OF_A_WHISK_ACTIVATION_XXX
 }

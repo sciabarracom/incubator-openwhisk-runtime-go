@@ -40,15 +40,21 @@ func ExampleTestTCPClient() {
 }
 
 func ExampleRequestReverseProxy() {
-	fmt.Println("reverse proxy request")
 	ts := testHTTPServer("test server")
 	defer ts.Close()
-	RequestReverseProxy(ts.URL, "/123", "http://1.2.3.4/")
-	grep(`rule|url`, testHTTPServerLastBody)
+	auth := "123456"
+	target := "192.168.0.1"
+	RequestReverseProxy(ts.URL, auth, target)
+	grep(`-|rule|url`, testHTTPServerLastBody)
 	// Output:
-	// reverse proxy request
-	// "rule": "PathPrefix:/123"
-	// "url": "http://1.2.3.4/"
+	// "frontend-192-168-0-1": {
+	// "backend": "backend-192-168-0-1",
+	// "route-192-168-0-1": {
+	// "rule": "PathPrefix:/123456"
+	// "backend-192-168-0-1": {
+	// "server-192-168-0-1": {
+	// "url": "http://192.168.0.1:8079"
+
 }
 
 func ExampleForwarder() {
@@ -139,4 +145,10 @@ func ExampleForwarderCmd() {
 
 	// Output:
 	// HELLO WORLD
+}
+
+func ExampleGetCurrentIP() {
+	fmt.Println(replace("\\d+", "X", GetCurrentIP()))
+	// Output:
+	// X.X.X.X
 }

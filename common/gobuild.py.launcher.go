@@ -31,10 +31,8 @@ import (
 func main() {
 	// debugging
 	var debug = os.Getenv("OW_DEBUG") != ""
-
 	if debug {
-		filename := os.Getenv("OW_DEBUG")
-		f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		f, err := os.OpenFile("/tmp/action.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		if err == nil {
 			log.SetOutput(f)
 			defer f.Close()

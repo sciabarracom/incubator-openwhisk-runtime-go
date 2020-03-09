@@ -22,6 +22,7 @@ openwhisk/_test/exec.go
 openwhisk/_test/hi
 openwhisk/_test/hello_greeting
 openwhisk/_test/hello_message
+openwhisk/_test/hello_debugger
 openwhisk/_test/*.zip
 openwhisk/_test/*.jar
 openwhisk/_test/compile/
@@ -32,6 +33,7 @@ openwhisk/action/
 openwhisk/compile/
 openwhisk/debug.test
 *.pyc
+exec.env
 
 # Eclipse
 tests/bin/

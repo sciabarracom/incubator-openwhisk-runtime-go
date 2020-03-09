@@ -1,19 +1,3 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package openwhisk
 
 import (
@@ -135,6 +119,17 @@ func initCode(file string, main string) string {
 	return string(j)
 }
 
+func initBinaryEnv(file string, main string, env map[string]interface{}) string {
+	dat, _ := ioutil.ReadFile(file)
+	enc := base64.StdEncoding.EncodeToString(dat)
+	body := initBodyRequest{Code: enc, Binary: true, Env: env}
+	if main != "" {
+		body.Main = main
+	}
+	j, _ := json.Marshal(initRequest{Value: body})
+	return string(j)
+}
+
 func initBytes(dat []byte, main string) string {
 	enc := base64.StdEncoding.EncodeToString(dat)
 	body := initBodyRequest{Binary: true, Code: enc}
@@ -203,6 +198,10 @@ func grep(search string, data string) {
 			fmt.Println(strings.TrimSpace(line))
 		}
 	}
+}
+func replace(search string, replace string, data string) string {
+	var re = regexp.MustCompile(search)
+	return re.ReplaceAllString(data, replace)
 }
 
 func TestMain(m *testing.M) {

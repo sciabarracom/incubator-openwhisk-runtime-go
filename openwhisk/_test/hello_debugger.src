@@ -15,15 +15,39 @@
  * limitations under the License.
  */
 
-package main
-
-import (
-	"fmt"
-	"hello"
-)
-
-// Main forwading to Hello
-func Main(args map[string]interface{}) map[string]interface{} {
-	fmt.Println("Main")
-	return hello.Hello(args)
+func tcpServ(hostPort string) {
+	 l, err := net.Listen("tcp", hostPort)
+	 if err != nil {
+		return
+	 }
+	 for {
+		conn, err := l.Accept()
+		if err != nil {
+			continue
+		}
+		scanner := bufio.NewScanner(conn)
+		ok := scanner.Scan()
+		if ok {
+			s := scanner.Text()
+			r := strings.ToUpper(s) + "\n"
+			conn.Write([]byte(r))
+			conn.Close()
+		}
+	}
 }
+
+func init() {
+	go tcpServ("127.0.0.1:8081")
+}
+
+func Main(obj map[string]interface{}) map[string]interface{} {
+	name, ok := obj["name"].(string)
+	if !ok {
+		name = "Stranger"
+	}
+	fmt.Printf("name=%s\n", name)
+	msg := make(map[string]interface{})
+	msg["message"] = "Hello, " + name + "!"
+	return msg
+}
+

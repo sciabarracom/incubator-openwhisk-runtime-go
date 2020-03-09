@@ -39,10 +39,14 @@ type initRequest struct {
 	Value initBodyRequest `json:"value,omitempty"`
 }
 
-func sendOK(w http.ResponseWriter) {
+func sendOK(w http.ResponseWriter, debugger bool) {
 	// answer OK
 	w.Header().Set("Content-Type", "application/json")
-	buf := []byte("{\"ok\":true}\n")
+	key := "ok"
+	if debugger {
+		key = "debug"
+	}
+	buf := []byte(fmt.Sprintf("{\"%s\":true}\n", key))
 	w.Header().Set("Content-Length", fmt.Sprintf("%d", len(buf)))
 	w.Write(buf)
 	if f, ok := w.(http.Flusher); ok {
@@ -79,7 +83,6 @@ func (ap *ActionProxy) initHandler(w http.ResponseWriter, r *http.Request) {
 
 	var request initRequest
 	err = json.Unmarshal(body, &request)
-
 	if err != nil {
 		sendError(w, http.StatusBadRequest, fmt.Sprintf("Error unmarshaling request: %v", err))
 		return
@@ -142,7 +145,46 @@ func (ap *ActionProxy) initHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ap.initialized = true
-	sendOK(w)
+	debugger := StartDebuggerIfRequired(request.Value.Env)
+	sendOK(w, debugger)
+}
+
+func getValueFromEnvOrMap(key string, env map[string]interface{}) string {
+	value, ok := env[key].(string)
+	if ok {
+		return value
+	}
+	return os.Getenv(key)
+}
+
+// StartDebuggerIfRequired checks environment variables
+// for __OW_DEBUG_PORT __OW_DEBUG_PROXY __OW_DEBUG_AUTH
+// either in the map and in the environment and starts debugger if required
+func StartDebuggerIfRequired(env map[string]interface{}) bool {
+	debugPort := getValueFromEnvOrMap("__OW_DEBUG_PORT", env)
+	debugProxy := getValueFromEnvOrMap("__OW_DEBUG_PROXY", env)
+	debugAuth := getValueFromEnvOrMap("__OW_DEBUG_AUTH", env)
+	if debugPort == "" || debugProxy == "" || debugAuth == "" {
+		Debug("Some paramter is empty: port:%s proxy:%s auth:%s", debugPort, debugProxy, debugAuth)
+		return false
+	}
+
+	Debug("ConnectDebugger: port:%s proxy:%s auth:%s", debugPort, debugProxy, debugAuth)
+	fwd, err := ConnectDebugger(debugPort, debugProxy, debugAuth)
+	if err != nil {
+		Debug("connect error %s", err)
+		return false
+	}
+	debugTarget := GetCurrentIP()
+	Debug("RequestReverseProxy: %s %s %s", debugProxy, debugAuth, debugTarget)
+	res, err := RequestReverseProxy(debugProxy, debugAuth, debugTarget)
+	if err != nil {
+		Debug("reverse proxy error %s", err)
+		fwd.Close()
+		return false
+	}
+	Debug("ok: %s", res)
+	return true
 }
 
 // ExtractAndCompile decode the buffer and if a compiler is defined, compile it also

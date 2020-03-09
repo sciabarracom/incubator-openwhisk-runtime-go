@@ -60,10 +60,10 @@ func (ap *ActionProxy) CompileAction(main string, srcDir string, binDir string) 
 	for k, v := range ap.env {
 		cmd.Env = append(cmd.Env, k+"="+v)
 	}
-
+	Debug("compiler env %v", cmd.Env)
 	// gather stdout and stderr
 	out, err := cmd.CombinedOutput()
-	Debug("compiler out: %s, %v", out, err)
+	Debug("compiler out: %s", out)
 	if len(out) > 0 {
 		return fmt.Errorf("%s", out)
 	}

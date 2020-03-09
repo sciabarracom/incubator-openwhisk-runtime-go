@@ -17,12 +17,15 @@
 package openwhisk
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 
 	chclient "github.com/jpillora/chisel/client"
 	chserver "github.com/jpillora/chisel/server"
@@ -73,36 +76,40 @@ func (fwd *Forwarder) Start() error {
 }
 
 // RequestReverseProxy requests a reverse proxy
-func RequestReverseProxy(proxy string, prefix string, target string) ([]byte, error) {
+func RequestReverseProxy(proxy string, auth string, target string) ([]byte, error) {
+	url := fmt.Sprintf("http://%s:8079", target)
+	entry := strings.ReplaceAll(target, ".", "-")
 	data := strings.ReplaceAll(fmt.Sprintf(`{
   "frontends": {
-    "frontend$N$": {
-      "backend": "backend$N$",
+    "frontend-$N$": {
+      "backend": "backend-$N$",
       "routes": {
-        "route$N$": {
-          "rule": "PathPrefix:%s"
+        "route-$N$": {
+          "rule": "PathPrefix:/"
         }
       }
     }
   },
   "backends": {
-    "backend$N$": {
+    "backend-$N$": {
       "servers": {
-        "server$N$": {
+        "server-$N$": {
           "url": "%s"
         }
       }
     }
   }
-}`, prefix, target), "$N$", "1")
+}`, url), "$N$", entry)
 	client := &http.Client{}
 	restReq := proxy + "/api/providers/rest"
 	req, err := http.NewRequest(http.MethodPut, restReq, strings.NewReader(data))
 	if err != nil {
+		Debug("failed request: %s", data)
 		return nil, err
 	}
 	res, err := client.Do(req)
 	if err != nil {
+		Debug("failed execution of request: %v", req)
 		return nil, err
 	}
 	return ioutil.ReadAll(res.Body)
@@ -128,4 +135,68 @@ func ChiselClientCmd(server string, remote string, auth string) error {
 	cmd := exec.Command("chisel", "client",
 		"--auth", auth, server, remote)
 	return cmd.Start()
+}
+
+// GetCurrentIP looks interfaces for the current IP, and returns the first not loopback address
+func GetCurrentIP() string {
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		Debug("%s", err)
+		return ""
+	}
+	for _, i := range ifaces {
+		addrs, err := i.Addrs()
+		if err != nil {
+			Debug("%s", err)
+			return ""
+		}
+		for _, addr := range addrs {
+			var ip net.IP
+			switch v := addr.(type) {
+			case *net.IPNet:
+				ip = v.IP
+				if ip.IsLoopback() {
+					continue
+				}
+				res := ip.To4()
+				if res != nil {
+					return res.String()
+				}
+			}
+		}
+	}
+	return ""
+}
+
+// ConnectDebugger connects the debugger if possible
+func ConnectDebugger(debugPort string, reverseProxy string, auth string) (*Forwarder, error) {
+	// sanity check of paramenters
+	if debugPort == "" {
+		return nil, errors.New("no debug port")
+	}
+	if reverseProxy == "" {
+		return nil, errors.New("no reverseProxy")
+	}
+
+	// check if the debugger port is available
+	l, err := net.DialTimeout("tcp", "127.0.0.1:"+debugPort, 1*time.Millisecond)
+	if err != nil {
+		return nil, err
+	}
+	defer l.Close()
+
+	// create a forwarder server
+	fwd, err := NewForwarder(auth, "127.0.0.1", 8079)
+	if err != nil {
+		return nil, err
+	}
+	fwd.Server.Logger.Info = false
+	fwd.Server.Logger.Debug = false
+
+	err = fwd.Start()
+	if err != nil {
+		return nil, err
+	}
+	Debug("started forwarding server in 127.0.0.1:8079")
+	return fwd, nil
 }
