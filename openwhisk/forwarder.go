@@ -169,8 +169,11 @@ func GetCurrentIP() string {
 }
 
 // ConnectDebugger connects the debugger if possible
-func ConnectDebugger(debugPort string, reverseProxy string, auth string) (*Forwarder, error) {
+func ConnectDebugger(debugIP string, debugPort string, reverseProxy string, auth string) (*Forwarder, error) {
 	// sanity check of paramenters
+	if debugIP == "" {
+		return nil, errors.New("no debug ip")
+	}
 	if debugPort == "" {
 		return nil, errors.New("no debug port")
 	}
@@ -186,7 +189,7 @@ func ConnectDebugger(debugPort string, reverseProxy string, auth string) (*Forwa
 	defer l.Close()
 
 	// create a forwarder server
-	fwd, err := NewForwarder(auth, "127.0.0.1", 8079)
+	fwd, err := NewForwarder(auth, debugIP, 8079)
 	if err != nil {
 		return nil, err
 	}
@@ -197,6 +200,6 @@ func ConnectDebugger(debugPort string, reverseProxy string, auth string) (*Forwa
 	if err != nil {
 		return nil, err
 	}
-	Debug("started forwarding server in 127.0.0.1:8079")
+	Debug("started forwarding server in %s:%s", debugIP, debugPort)
 	return fwd, nil
 }

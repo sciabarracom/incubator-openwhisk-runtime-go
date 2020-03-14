@@ -161,23 +161,23 @@ func getValueFromEnvOrMap(key string, env map[string]interface{}) string {
 // for __OW_DEBUG_PORT __OW_DEBUG_PROXY __OW_DEBUG_AUTH
 // either in the map and in the environment and starts debugger if required
 func StartDebuggerIfRequired(env map[string]interface{}) bool {
+	debugIP := GetCurrentIP()
 	debugPort := getValueFromEnvOrMap("__OW_DEBUG_PORT", env)
 	debugProxy := getValueFromEnvOrMap("__OW_DEBUG_PROXY", env)
 	debugAuth := getValueFromEnvOrMap("__OW_DEBUG_AUTH", env)
 	if debugPort == "" || debugProxy == "" || debugAuth == "" {
-		Debug("Some paramter is empty: port:%s proxy:%s auth:%s", debugPort, debugProxy, debugAuth)
+		Debug("Some paramater is empty: port:%s proxy:%s auth:%s", debugPort, debugProxy, debugAuth)
 		return false
 	}
 
-	Debug("ConnectDebugger: port:%s proxy:%s auth:%s", debugPort, debugProxy, debugAuth)
-	fwd, err := ConnectDebugger(debugPort, debugProxy, debugAuth)
+	Debug("ConnectDebugger: %s:%s proxy:%s auth:%s", debugIP, debugPort, debugProxy, debugAuth)
+	fwd, err := ConnectDebugger(debugIP, debugPort, debugProxy, debugAuth)
 	if err != nil {
 		Debug("connect error %s", err)
 		return false
 	}
-	debugTarget := GetCurrentIP()
-	Debug("RequestReverseProxy: %s %s %s", debugProxy, debugAuth, debugTarget)
-	res, err := RequestReverseProxy(debugProxy, debugAuth, debugTarget)
+	Debug("RequestReverseProxy: %s/%s -> %s", debugProxy, debugAuth, debugIP)
+	res, err := RequestReverseProxy(debugProxy, debugAuth, debugIP)
 	if err != nil {
 		Debug("reverse proxy error %s", err)
 		fwd.Close()
