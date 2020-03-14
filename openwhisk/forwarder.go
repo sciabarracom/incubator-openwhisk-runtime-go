@@ -85,7 +85,7 @@ func RequestReverseProxy(proxy string, auth string, target string) ([]byte, erro
       "backend": "backend-$N$",
       "routes": {
         "route-$N$": {
-          "rule": "PathPrefix:/"
+          "rule": "PathPrefix:/%s"
         }
       }
     }
@@ -99,7 +99,7 @@ func RequestReverseProxy(proxy string, auth string, target string) ([]byte, erro
       }
     }
   }
-}`, url), "$N$", entry)
+}`, auth, url), "$N$", entry)
 	client := &http.Client{}
 	restReq := proxy + "/api/providers/rest"
 	req, err := http.NewRequest(http.MethodPut, restReq, strings.NewReader(data))
